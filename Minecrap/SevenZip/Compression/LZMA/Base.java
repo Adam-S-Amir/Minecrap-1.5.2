@@ -1,9 +1,11 @@
-/*
- * Decompiled with CFR 0.152.
- */
+// 
+// Decompiled by Procyon v0.5.36
+// 
+
 package SevenZip.Compression.LZMA;
 
-public class Base {
+public class Base
+{
     public static final int kNumRepDistances = 4;
     public static final int kNumStates = 12;
     public static final int kNumPosSlotBits = 6;
@@ -31,12 +33,12 @@ public class Base {
     public static final int kNumMidLenSymbols = 8;
     public static final int kNumLenSymbols = 272;
     public static final int kMatchMaxLen = 273;
-
+    
     public static final int StateInit() {
         return 0;
     }
-
-    public static final int StateUpdateChar(int index) {
+    
+    public static final int StateUpdateChar(final int index) {
         if (index < 4) {
             return 0;
         }
@@ -45,25 +47,26 @@ public class Base {
         }
         return index - 6;
     }
-
-    public static final int StateUpdateMatch(int index) {
-        return index < 7 ? 7 : 10;
+    
+    public static final int StateUpdateMatch(final int index) {
+        return (index < 7) ? 7 : 10;
     }
-
-    public static final int StateUpdateRep(int index) {
-        return index < 7 ? 8 : 11;
+    
+    public static final int StateUpdateRep(final int index) {
+        return (index < 7) ? 8 : 11;
     }
-
-    public static final int StateUpdateShortRep(int index) {
-        return index < 7 ? 9 : 11;
+    
+    public static final int StateUpdateShortRep(final int index) {
+        return (index < 7) ? 9 : 11;
     }
-
-    public static final boolean StateIsCharState(int index) {
+    
+    public static final boolean StateIsCharState(final int index) {
         return index < 7;
     }
-
+    
     public static final int GetLenToPosState(int len) {
-        if ((len -= 2) < 4) {
+        len -= 2;
+        if (len < 4) {
             return len;
         }
         return 3;

@@ -1,12 +1,12 @@
-/*
- * Decompiled with CFR 0.152.
- */
+// 
+// Decompiled by Procyon v0.5.36
+// 
+
 package magnus.minecraftmanager;
 
-import magnus.minecraftmanager.MinecraftBackupManager;
-
-public class Main {
-    public static void main(String[] args) {
+public class Main
+{
+    public static void main(final String[] args) {
         new MinecraftBackupManager().setVisible(true);
     }
 }

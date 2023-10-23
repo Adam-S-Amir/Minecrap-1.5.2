@@ -1,43 +1,44 @@
-/*
- * Decompiled with CFR 0.152.
- */
+// 
+// Decompiled by Procyon v0.5.36
+// 
+
 package net.minecraft;
 
-import SevenZip.LzmaAlone;
-import java.applet.Applet;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FilePermission;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.net.HttpURLConnection;
-import java.net.JarURLConnection;
-import java.net.SocketPermission;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.net.URLConnection;
-import java.security.AccessControlException;
-import java.security.AccessController;
-import java.security.CodeSource;
-import java.security.PermissionCollection;
-import java.security.PrivilegedExceptionAction;
-import java.security.SecureClassLoader;
-import java.security.cert.Certificate;
 import java.util.Enumeration;
-import java.util.Vector;
+import java.security.cert.Certificate;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.net.JarURLConnection;
+import java.io.OutputStream;
 import java.util.jar.JarOutputStream;
+import SevenZip.LzmaAlone;
+import java.io.FileOutputStream;
+import java.net.HttpURLConnection;
+import java.applet.Applet;
+import java.lang.reflect.Field;
+import java.util.Vector;
+import java.lang.reflect.Method;
+import java.io.FilePermission;
+import java.security.Permission;
+import java.net.SocketPermission;
+import java.security.SecureClassLoader;
+import java.security.PermissionCollection;
+import java.security.CodeSource;
+import java.net.URLClassLoader;
+import java.security.AccessControlException;
+import java.security.AccessController;
+import java.io.File;
+import java.security.PrivilegedExceptionAction;
+import java.io.Writer;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.jar.Pack200;
-import net.minecraft.Launcher;
-import net.minecraft.MinecraftUtil;
+import java.net.URLConnection;
+import java.io.InputStream;
+import java.net.URL;
 
-public class GameUpdater
-implements Runnable {
+public class GameUpdater implements Runnable
+{
     public static final int STATE_INIT = 1;
     public static final int STATE_DETERMINING_PACKAGES = 2;
     public static final int STATE_CHECKING_CACHE = 3;
@@ -59,44 +60,50 @@ implements Runnable {
     protected Thread animationThread;
     public boolean fatalError;
     public String fatalErrorDescription;
-    protected String subtaskMessage = "";
-    protected int state = 1;
-    protected boolean lzmaSupported = false;
-    protected boolean pack200Supported = false;
-    protected String[] genericErrorMessage = new String[]{"An error occured while loading the applet.", "Please contact support to resolve this issue.", "<placeholder for error message>"};
+    protected String subtaskMessage;
+    protected int state;
+    protected boolean lzmaSupported;
+    protected boolean pack200Supported;
+    protected String[] genericErrorMessage;
     protected boolean certificateRefused;
-    protected String[] certificateRefusedMessage = new String[]{"Permissions for Applet Refused.", "Please accept the permissions dialog to allow", "the applet to continue the loading process."};
+    protected String[] certificateRefusedMessage;
     protected static boolean natives_loaded;
-    public boolean forceUpdate = false;
+    public boolean forceUpdate;
     public static final String[] gameFiles;
     InputStream[] isp;
     URLConnection urlconnectionp;
-
+    
+    public GameUpdater() {
+        this.subtaskMessage = "";
+        this.state = 1;
+        this.lzmaSupported = false;
+        this.pack200Supported = false;
+        this.genericErrorMessage = new String[] { "An error occured while loading the applet.", "Please contact support to resolve this issue.", "<placeholder for error message>" };
+        this.certificateRefusedMessage = new String[] { "Permissions for Applet Refused.", "Please accept the permissions dialog to allow", "the applet to continue the loading process." };
+        this.forceUpdate = false;
+    }
+    
     public void init() {
         this.state = 1;
         try {
             Class.forName("LZMA.LzmaInputStream");
             this.lzmaSupported = true;
         }
-        catch (Throwable localThrowable) {
-            // empty catch block
-        }
+        catch (Throwable t) {}
         try {
             Pack200.class.getSimpleName();
             this.pack200Supported = true;
         }
-        catch (Throwable throwable) {
-            // empty catch block
-        }
+        catch (Throwable t2) {}
     }
-
-    private String generateStacktrace(Exception exception) {
-        StringWriter result = new StringWriter();
-        PrintWriter printWriter = new PrintWriter(result);
+    
+    private String generateStacktrace(final Exception exception) {
+        final Writer result = new StringWriter();
+        final PrintWriter printWriter = new PrintWriter(result);
         exception.printStackTrace(printWriter);
-        return ((Object)result).toString();
+        return result.toString();
     }
-
+    
     protected String getDescriptionForState() {
         switch (this.state) {
             case 1: {
@@ -129,57 +136,60 @@ implements Runnable {
             case 10: {
                 return "Done loading";
             }
+            default: {
+                return "unknown state";
+            }
         }
-        return "unknown state";
     }
-
+    
     protected void loadJarURLs() throws Exception {
         this.state = 2;
-        this.urlList = new URL[gameFiles.length + 1];
-        URL path = new URL("http://s3.amazonaws.com/MinecraftDownload/");
-        for (int i = 0; i < gameFiles.length; ++i) {
-            this.urlList[i] = new URL(path, gameFiles[i]);
+        this.urlList = new URL[GameUpdater.gameFiles.length + 1];
+        final URL path = new URL("http://s3.amazonaws.com/MinecraftDownload/");
+        for (int i = 0; i < GameUpdater.gameFiles.length; ++i) {
+            this.urlList[i] = new URL(path, GameUpdater.gameFiles[i]);
         }
-        String osName = System.getProperty("os.name");
+        final String osName = System.getProperty("os.name");
         String nativeJar = null;
         if (osName.startsWith("Win")) {
             nativeJar = "windows_natives.jar.lzma";
-        } else if (osName.startsWith("Linux")) {
+        }
+        else if (osName.startsWith("Linux")) {
             nativeJar = "linux_natives.jar.lzma";
-        } else if (osName.startsWith("Mac")) {
+        }
+        else if (osName.startsWith("Mac")) {
             nativeJar = "macosx_natives.jar.lzma";
-        } else if (osName.startsWith("Solaris") || osName.startsWith("SunOS")) {
+        }
+        else if (osName.startsWith("Solaris") || osName.startsWith("SunOS")) {
             nativeJar = "solaris_natives.jar.lzma";
-        } else {
+        }
+        else {
             this.fatalErrorOccured("OS (" + osName + ") not supported", null);
         }
         if (nativeJar == null) {
             this.fatalErrorOccured("no lwjgl natives files found", null);
-        } else {
+        }
+        else {
             this.urlList[this.urlList.length - 1] = new URL(path, nativeJar);
         }
     }
-
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     */
+    
     public void run() {
         this.init();
         this.state = 3;
         this.percentage = 5;
         try {
             this.loadJarURLs();
-            String path = (String)AccessController.doPrivileged(new PrivilegedExceptionAction(){
-
+            final String path = AccessController.doPrivileged((PrivilegedExceptionAction<String>)new PrivilegedExceptionAction() {
                 public Object run() throws Exception {
                     return MinecraftUtil.getWorkingDirectory() + File.separator + "bin" + File.separator;
                 }
             });
-            File dir = new File(path);
+            final File dir = new File(path);
             if (!dir.exists()) {
                 dir.mkdirs();
             }
-            int before = this.percentage;
+            final int before = this.percentage;
             boolean cacheAvailable = false;
             if (this.canPlayOffline()) {
                 cacheAvailable = true;
@@ -209,29 +219,29 @@ implements Runnable {
             this.loaderThread = null;
         }
     }
-
-    protected void updateClassPath(File dir) throws Exception {
-        String path;
+    
+    protected void updateClassPath(final File dir) throws Exception {
         this.state = 6;
         this.percentage = 95;
-        URL[] urls = new URL[this.urlList.length];
+        final URL[] urls = new URL[this.urlList.length];
         for (int i = 0; i < this.urlList.length; ++i) {
             urls[i] = new File(dir, this.getJarName(this.urlList[i])).toURI().toURL();
             System.out.println("URL: " + urls[i]);
         }
-        if (classLoader == null) {
-            classLoader = new URLClassLoader(urls){
-
-                protected PermissionCollection getPermissions(CodeSource codesource) {
+        if (GameUpdater.classLoader == null) {
+            GameUpdater.classLoader = new URLClassLoader(urls) {
+                @Override
+                protected PermissionCollection getPermissions(final CodeSource codesource) {
                     PermissionCollection perms = null;
                     try {
-                        Method method = SecureClassLoader.class.getDeclaredMethod("getPermissions", CodeSource.class);
+                        final Method method = SecureClassLoader.class.getDeclaredMethod("getPermissions", CodeSource.class);
                         method.setAccessible(true);
                         perms = (PermissionCollection)method.invoke(this.getClass().getClassLoader(), codesource);
-                        String host = "www.minecraft.net";
+                        final String host = "www.minecraft.net";
                         if (host != null && host.length() > 0) {
                             perms.add(new SocketPermission(host, "connect,accept"));
-                        } else {
+                        }
+                        else {
                             codesource.getLocation().getProtocol().equals("file");
                         }
                         perms.add(new FilePermission("<<ALL FILES>>", "read"));
@@ -243,47 +253,49 @@ implements Runnable {
                 }
             };
         }
-        if (!(path = dir.getAbsolutePath()).endsWith(File.separator)) {
-            path = path + File.separator;
+        String path = dir.getAbsolutePath();
+        if (!path.endsWith(File.separator)) {
+            path += File.separator;
         }
         this.unloadNatives(path);
         System.setProperty("org.lwjgl.librarypath", path + "natives");
         System.setProperty("net.java.games.input.librarypath", path + "natives");
-        natives_loaded = true;
+        GameUpdater.natives_loaded = true;
     }
-
-    private void unloadNatives(String nativePath) {
-        if (!natives_loaded) {
+    
+    private void unloadNatives(final String nativePath) {
+        if (!GameUpdater.natives_loaded) {
             return;
         }
         try {
-            Field field = ClassLoader.class.getDeclaredField("loadedLibraryNames");
+            final Field field = ClassLoader.class.getDeclaredField("loadedLibraryNames");
             field.setAccessible(true);
-            Vector libs = (Vector)field.get(this.getClass().getClassLoader());
-            String path = new File(nativePath).getCanonicalPath();
+            final Vector libs = (Vector)field.get(this.getClass().getClassLoader());
+            final String path = new File(nativePath).getCanonicalPath();
             for (int i = 0; i < libs.size(); ++i) {
-                String s = (String)libs.get(i);
-                if (!s.startsWith(path)) continue;
-                libs.remove(i);
-                --i;
+                final String s = libs.get(i);
+                if (s.startsWith(path)) {
+                    libs.remove(i);
+                    --i;
+                }
             }
         }
         catch (Exception e) {
             e.printStackTrace();
         }
     }
-
+    
     public Applet createApplet() throws ClassNotFoundException, InstantiationException, IllegalAccessException {
-        Class<?> appletClass = classLoader.loadClass("net.minecraft.client.MinecraftApplet");
-        return (Applet)appletClass.newInstance();
+        final Class appletClass = GameUpdater.classLoader.loadClass("net.minecraft.client.MinecraftApplet");
+        return appletClass.newInstance();
     }
-
-    protected void downloadJars(String path) throws Exception {
+    
+    protected void downloadJars(final String path) throws Exception {
         this.state = 4;
-        int[] fileSizes = new int[this.urlList.length];
+        final int[] fileSizes = new int[this.urlList.length];
         for (int i = 0; i < this.urlList.length; ++i) {
             System.out.println(this.urlList[i]);
-            URLConnection urlconnection = this.urlList[i].openConnection();
+            final URLConnection urlconnection = this.urlList[i].openConnection();
             urlconnection.setDefaultUseCaches(false);
             if (urlconnection instanceof HttpURLConnection) {
                 ((HttpURLConnection)urlconnection).setRequestMethod("HEAD");
@@ -291,28 +303,29 @@ implements Runnable {
             fileSizes[i] = urlconnection.getContentLength();
             this.totalSizeDownload += fileSizes[i];
         }
-        this.percentage = 10;
-        int initialPercentage = 10;
-        byte[] buffer = new byte[65536];
-        for (int i = 0; i < this.urlList.length; ++i) {
+        final int percentage = 10;
+        this.percentage = percentage;
+        final int initialPercentage = percentage;
+        final byte[] buffer = new byte[65536];
+        for (int j = 0; j < this.urlList.length; ++j) {
             int unsuccessfulAttempts = 0;
-            int maxUnsuccessfulAttempts = 3;
+            final int maxUnsuccessfulAttempts = 3;
             boolean downloadFile = true;
             while (downloadFile) {
-                int bufferSize;
                 downloadFile = false;
-                URLConnection urlconnection = this.urlList[i].openConnection();
-                if (urlconnection instanceof HttpURLConnection) {
-                    urlconnection.setRequestProperty("Cache-Control", "no-cache");
-                    urlconnection.connect();
+                final URLConnection urlconnection2 = this.urlList[j].openConnection();
+                if (urlconnection2 instanceof HttpURLConnection) {
+                    urlconnection2.setRequestProperty("Cache-Control", "no-cache");
+                    urlconnection2.connect();
                 }
-                String currentFile = this.getFileName(this.urlList[i]);
-                InputStream inputstream = this.getJarInputStream(currentFile, urlconnection);
-                FileOutputStream fos = new FileOutputStream(path + currentFile);
+                final String currentFile = this.getFileName(this.urlList[j]);
+                final InputStream inputstream = this.getJarInputStream(currentFile, urlconnection2);
+                final FileOutputStream fos = new FileOutputStream(path + currentFile);
                 long downloadStartTime = System.currentTimeMillis();
                 int downloadedAmount = 0;
                 int fileSize = 0;
                 String downloadSpeedMessage = "";
+                int bufferSize;
                 while ((bufferSize = inputstream.read(buffer, 0, buffer.length)) != -1) {
                     fos.write(buffer, 0, bufferSize);
                     this.currentSizeDownload += bufferSize;
@@ -320,44 +333,48 @@ implements Runnable {
                     this.percentage = initialPercentage + this.currentSizeDownload * 45 / this.totalSizeDownload;
                     this.subtaskMessage = "Retrieving: " + currentFile + " " + this.currentSizeDownload * 100 / this.totalSizeDownload + "%";
                     downloadedAmount += bufferSize;
-                    long timeLapse = System.currentTimeMillis() - downloadStartTime;
+                    final long timeLapse = System.currentTimeMillis() - downloadStartTime;
                     if (timeLapse >= 1000L) {
-                        float downloadSpeed = (float)downloadedAmount / (float)timeLapse;
-                        downloadSpeed = (float)((int)(downloadSpeed * 100.0f)) / 100.0f;
+                        float downloadSpeed = downloadedAmount / (float)timeLapse;
+                        downloadSpeed = (int)(downloadSpeed * 100.0f) / 100.0f;
                         downloadSpeedMessage = " @ " + downloadSpeed + " KB/sec";
                         downloadedAmount = 0;
                         downloadStartTime += 1000L;
                     }
-                    this.subtaskMessage = this.subtaskMessage + downloadSpeedMessage;
+                    this.subtaskMessage += downloadSpeedMessage;
                 }
                 inputstream.close();
                 fos.close();
-                if (!(urlconnection instanceof HttpURLConnection) || fileSize == fileSizes[i] || fileSizes[i] <= 0) continue;
-                if (++unsuccessfulAttempts < maxUnsuccessfulAttempts) {
+                if (urlconnection2 instanceof HttpURLConnection) {
+                    if (fileSize == fileSizes[j]) {
+                        continue;
+                    }
+                    if (fileSizes[j] <= 0) {
+                        continue;
+                    }
+                    if (++unsuccessfulAttempts >= maxUnsuccessfulAttempts) {
+                        throw new Exception("failed to download " + currentFile);
+                    }
                     downloadFile = true;
                     this.currentSizeDownload -= fileSize;
-                    continue;
                 }
-                throw new Exception("failed to download " + currentFile);
             }
         }
         this.subtaskMessage = "";
     }
-
-    protected InputStream getJarInputStream(String currentFile, URLConnection urlconnection) throws Exception {
-        InputStream[] is = new InputStream[1];
+    
+    protected InputStream getJarInputStream(final String currentFile, final URLConnection urlconnection) throws Exception {
+        final InputStream[] is = { null };
         this.isp = is;
         this.urlconnectionp = urlconnection;
         for (int j = 0; j < 3 && is[0] == null; ++j) {
-            Thread t = new Thread(){
-
+            final Thread t = new Thread() {
+                @Override
                 public void run() {
                     try {
                         GameUpdater.this.isp[0] = GameUpdater.this.urlconnectionp.getInputStream();
                     }
-                    catch (Exception exception) {
-                        // empty catch block
-                    }
+                    catch (Exception ex) {}
                 }
             };
             t.setName("JarInputStreamThread");
@@ -369,122 +386,127 @@ implements Runnable {
                 }
                 catch (InterruptedException localInterruptedException) {}
             }
-            if (is[0] != null) continue;
-            try {
-                t.interrupt();
-                t.join();
-                continue;
-            }
-            catch (InterruptedException localInterruptedException1) {
-                // empty catch block
+            if (is[0] == null) {
+                try {
+                    t.interrupt();
+                    t.join();
+                }
+                catch (InterruptedException ex) {}
             }
         }
-        if (is[0] == null) {
-            if (currentFile.equals("minecraft.jar")) {
-                throw new Exception("Unable to download " + currentFile);
-            }
+        if (is[0] != null) {
+            return is[0];
+        }
+        if (currentFile.equals("minecraft.jar")) {
             throw new Exception("Unable to download " + currentFile);
         }
-        return is[0];
+        throw new Exception("Unable to download " + currentFile);
     }
-
-    protected void extractLZMA(String in, String out) throws Exception {
-        File f = new File(in);
-        File fout = new File(out);
+    
+    protected void extractLZMA(final String in, final String out) throws Exception {
+        final File f = new File(in);
+        final File fout = new File(out);
         LzmaAlone.decompress(f, fout);
         f.delete();
     }
-
-    protected void extractPack(String in, String out) throws Exception {
-        File f = new File(in);
-        FileOutputStream fostream = new FileOutputStream(out);
-        JarOutputStream jostream = new JarOutputStream(fostream);
-        Pack200.Unpacker unpacker = Pack200.newUnpacker();
+    
+    protected void extractPack(final String in, final String out) throws Exception {
+        final File f = new File(in);
+        final FileOutputStream fostream = new FileOutputStream(out);
+        final JarOutputStream jostream = new JarOutputStream(fostream);
+        final Pack200.Unpacker unpacker = Pack200.newUnpacker();
         unpacker.unpack(f, jostream);
         jostream.close();
         f.delete();
     }
-
-    protected void extractJars(String path) throws Exception {
+    
+    protected void extractJars(final String path) throws Exception {
         this.state = 5;
-        float increment = 10.0f / (float)this.urlList.length;
+        final float increment = 10.0f / this.urlList.length;
         for (int i = 0; i < this.urlList.length; ++i) {
-            this.percentage = 55 + (int)(increment * (float)(i + 1));
-            String filename = this.getFileName(this.urlList[i]);
+            this.percentage = 55 + (int)(increment * (i + 1));
+            final String filename = this.getFileName(this.urlList[i]);
             if (filename.endsWith(".pack.lzma")) {
                 this.subtaskMessage = "Extracting: " + filename + " to " + filename.replaceAll(".lzma", "");
                 this.extractLZMA(path + filename, path + filename.replaceAll(".lzma", ""));
                 this.subtaskMessage = "Extracting: " + filename.replaceAll(".lzma", "") + " to " + filename.replaceAll(".pack.lzma", "");
                 this.extractPack(path + filename.replaceAll(".lzma", ""), path + filename.replaceAll(".pack.lzma", ""));
-                continue;
             }
-            if (filename.endsWith(".pack")) {
+            else if (filename.endsWith(".pack")) {
                 this.subtaskMessage = "Extracting: " + filename + " to " + filename.replace(".pack", "");
                 this.extractPack(path + filename, path + filename.replace(".pack", ""));
-                continue;
             }
-            if (!filename.endsWith(".lzma")) continue;
-            this.subtaskMessage = "Extracting: " + filename + " to " + filename.replace(".lzma", "");
-            this.extractLZMA(path + filename, path + filename.replace(".lzma", ""));
+            else if (filename.endsWith(".lzma")) {
+                this.subtaskMessage = "Extracting: " + filename + " to " + filename.replace(".lzma", "");
+                this.extractLZMA(path + filename, path + filename.replace(".lzma", ""));
+            }
         }
     }
-
-    protected void extractNatives(String path) throws Exception {
-        JarEntry entry;
-        File nativeFolder;
+    
+    protected void extractNatives(final String path) throws Exception {
         this.state = 5;
-        int initialPercentage = this.percentage;
-        String nativeJar = this.getJarName(this.urlList[this.urlList.length - 1]);
+        final int initialPercentage = this.percentage;
+        final String nativeJar = this.getJarName(this.urlList[this.urlList.length - 1]);
         Certificate[] certificate = Launcher.class.getProtectionDomain().getCodeSource().getCertificates();
         if (certificate == null) {
-            URL location = Launcher.class.getProtectionDomain().getCodeSource().getLocation();
-            JarURLConnection jurl = (JarURLConnection)new URL("jar:" + location.toString() + "!/net/minecraft/Launcher.class").openConnection();
+            final URL location = Launcher.class.getProtectionDomain().getCodeSource().getLocation();
+            final JarURLConnection jurl = (JarURLConnection)new URL("jar:" + location.toString() + "!/net/minecraft/Launcher.class").openConnection();
             jurl.setDefaultUseCaches(true);
             try {
                 certificate = jurl.getCertificates();
             }
-            catch (Exception localException) {
-                // empty catch block
-            }
+            catch (Exception ex) {}
         }
-        if (!(nativeFolder = new File(path + "natives")).exists()) {
+        final File nativeFolder = new File(path + "natives");
+        if (!nativeFolder.exists()) {
             nativeFolder.mkdir();
         }
-        JarFile jarFile = new JarFile(path + nativeJar, true);
-        Enumeration<JarEntry> entities = jarFile.entries();
+        final JarFile jarFile = new JarFile(path + nativeJar, true);
+        Enumeration entities = jarFile.entries();
         this.totalSizeExtract = 0;
         while (entities.hasMoreElements()) {
-            entry = entities.nextElement();
-            if (entry.isDirectory() || entry.getName().indexOf(47) != -1) continue;
-            this.totalSizeExtract = (int)((long)this.totalSizeExtract + entry.getSize());
+            final JarEntry entry = entities.nextElement();
+            if (!entry.isDirectory()) {
+                if (entry.getName().indexOf(47) != -1) {
+                    continue;
+                }
+                this.totalSizeExtract += (int)entry.getSize();
+            }
         }
         this.currentSizeExtract = 0;
         entities = jarFile.entries();
         while (entities.hasMoreElements()) {
-            int bufferSize;
-            File f;
-            entry = entities.nextElement();
-            if (entry.isDirectory() || entry.getName().indexOf(47) != -1 || (f = new File(path + "natives" + File.separator + entry.getName())).exists() && !f.delete()) continue;
-            InputStream in = jarFile.getInputStream(jarFile.getEntry(entry.getName()));
-            FileOutputStream out = new FileOutputStream(path + "natives" + File.separator + entry.getName());
-            byte[] buffer = new byte[65536];
-            while ((bufferSize = in.read(buffer, 0, buffer.length)) != -1) {
-                ((OutputStream)out).write(buffer, 0, bufferSize);
-                this.currentSizeExtract += bufferSize;
-                this.percentage = initialPercentage + this.currentSizeExtract * 20 / this.totalSizeExtract;
-                this.subtaskMessage = "Extracting: " + entry.getName() + " " + this.currentSizeExtract * 100 / this.totalSizeExtract + "%";
+            final JarEntry entry = entities.nextElement();
+            if (!entry.isDirectory()) {
+                if (entry.getName().indexOf(47) != -1) {
+                    continue;
+                }
+                final File f = new File(path + "natives" + File.separator + entry.getName());
+                if (f.exists() && !f.delete()) {
+                    continue;
+                }
+                final InputStream in = jarFile.getInputStream(jarFile.getEntry(entry.getName()));
+                final OutputStream out = new FileOutputStream(path + "natives" + File.separator + entry.getName());
+                final byte[] buffer = new byte[65536];
+                int bufferSize;
+                while ((bufferSize = in.read(buffer, 0, buffer.length)) != -1) {
+                    out.write(buffer, 0, bufferSize);
+                    this.currentSizeExtract += bufferSize;
+                    this.percentage = initialPercentage + this.currentSizeExtract * 20 / this.totalSizeExtract;
+                    this.subtaskMessage = "Extracting: " + entry.getName() + " " + this.currentSizeExtract * 100 / this.totalSizeExtract + "%";
+                }
+                validateCertificateChain(certificate, entry.getCertificates());
+                in.close();
+                out.close();
             }
-            GameUpdater.validateCertificateChain(certificate, entry.getCertificates());
-            in.close();
-            ((OutputStream)out).close();
         }
         this.subtaskMessage = "";
         jarFile.close();
-        File f = new File(path + nativeJar);
-        f.delete();
+        final File f2 = new File(path + nativeJar);
+        f2.delete();
     }
-
-    protected static void validateCertificateChain(Certificate[] ownCerts, Certificate[] native_certs) throws Exception {
+    
+    protected static void validateCertificateChain(final Certificate[] ownCerts, final Certificate[] native_certs) throws Exception {
         if (ownCerts == null) {
             return;
         }
@@ -495,35 +517,38 @@ implements Runnable {
             throw new Exception("Unable to validate certificate chain. Chain differs in length [" + ownCerts.length + " vs " + native_certs.length + "]");
         }
         for (int i = 0; i < ownCerts.length; ++i) {
-            if (ownCerts[i].equals(native_certs[i])) continue;
-            throw new Exception("Certificate mismatch: " + ownCerts[i] + " != " + native_certs[i]);
+            if (!ownCerts[i].equals(native_certs[i])) {
+                throw new Exception("Certificate mismatch: " + ownCerts[i] + " != " + native_certs[i]);
+            }
         }
     }
-
-    protected String getJarName(URL url) {
+    
+    protected String getJarName(final URL url) {
         String fileName = url.getFile();
         if (fileName.contains("?")) {
             fileName = fileName.substring(0, fileName.indexOf("?"));
         }
         if (fileName.endsWith(".pack.lzma")) {
             fileName = fileName.replaceAll(".pack.lzma", "");
-        } else if (fileName.endsWith(".pack")) {
+        }
+        else if (fileName.endsWith(".pack")) {
             fileName = fileName.replaceAll(".pack", "");
-        } else if (fileName.endsWith(".lzma")) {
+        }
+        else if (fileName.endsWith(".lzma")) {
             fileName = fileName.replaceAll(".lzma", "");
         }
         return fileName.substring(fileName.lastIndexOf(47) + 1);
     }
-
-    protected String getFileName(URL url) {
+    
+    protected String getFileName(final URL url) {
         String fileName = url.getFile();
         if (fileName.contains("?")) {
             fileName = fileName.substring(0, fileName.indexOf("?"));
         }
         return fileName.substring(fileName.lastIndexOf(47) + 1);
     }
-
-    protected void fatalErrorOccured(String error, Exception e) {
+    
+    protected void fatalErrorOccured(final String error, final Exception e) {
         e.printStackTrace();
         this.fatalError = true;
         this.fatalErrorDescription = "Fatal error occured (" + this.state + "): " + error;
@@ -532,7 +557,7 @@ implements Runnable {
             System.out.println(this.generateStacktrace(e));
         }
     }
-
+    
     public boolean canPlayOffline() {
         if (!MinecraftUtil.getBinFolder().exists() || !MinecraftUtil.getBinFolder().isDirectory()) {
             return false;
@@ -540,28 +565,30 @@ implements Runnable {
         if (!MinecraftUtil.getNativesFolder().exists() || !MinecraftUtil.getNativesFolder().isDirectory()) {
             return false;
         }
-        if (MinecraftUtil.getBinFolder().list().length < gameFiles.length + 1) {
+        if (MinecraftUtil.getBinFolder().list().length < GameUpdater.gameFiles.length + 1) {
             return false;
         }
         if (MinecraftUtil.getNativesFolder().list().length < 1) {
             return false;
         }
-        String[] bins = MinecraftUtil.getBinFolder().list();
-        for (String necessary : gameFiles) {
+        final String[] bins = MinecraftUtil.getBinFolder().list();
+        for (final String necessary : GameUpdater.gameFiles) {
             boolean isThere = false;
-            for (String found : bins) {
-                if (!necessary.equalsIgnoreCase(found)) continue;
-                isThere = true;
-                break;
+            for (final String found : bins) {
+                if (necessary.equalsIgnoreCase(found)) {
+                    isThere = true;
+                    break;
+                }
             }
-            if (isThere) continue;
-            return false;
+            if (!isThere) {
+                return false;
+            }
         }
         return true;
     }
-
+    
     static {
-        natives_loaded = false;
-        gameFiles = new String[]{"lwjgl.jar", "jinput.jar", "lwjgl_util.jar", "minecraft.jar"};
+        GameUpdater.natives_loaded = false;
+        gameFiles = new String[] { "lwjgl.jar", "jinput.jar", "lwjgl_util.jar", "minecraft.jar" };
     }
 }

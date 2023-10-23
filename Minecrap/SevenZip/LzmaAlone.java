@@ -1,33 +1,37 @@
-/*
- * Decompiled with CFR 0.152.
- */
+// 
+// Decompiled by Procyon v0.5.36
+// 
+
 package SevenZip;
 
 import SevenZip.Compression.LZMA.Decoder;
-import java.io.BufferedInputStream;
+import java.io.OutputStream;
 import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
+import java.io.File;
 
-public class LzmaAlone {
-    public static void decompress(File in, File out) throws Exception {
-        File inFile = in;
-        File outFile = out;
-        BufferedInputStream inStream = new BufferedInputStream(new FileInputStream(inFile));
-        BufferedOutputStream outStream = new BufferedOutputStream(new FileOutputStream(outFile));
-        int propertiesSize = 5;
-        byte[] properties = new byte[propertiesSize];
+public class LzmaAlone
+{
+    public static void decompress(final File in, final File out) throws Exception {
+        final File inFile = in;
+        final File outFile = out;
+        final BufferedInputStream inStream = new BufferedInputStream(new FileInputStream(inFile));
+        final BufferedOutputStream outStream = new BufferedOutputStream(new FileOutputStream(outFile));
+        final int propertiesSize = 5;
+        final byte[] properties = new byte[propertiesSize];
         if (inStream.read(properties, 0, propertiesSize) != propertiesSize) {
             throw new Exception("input .lzma file is too short");
         }
-        Decoder decoder = new Decoder();
+        final Decoder decoder = new Decoder();
         if (!decoder.SetDecoderProperties(properties)) {
             throw new Exception("Incorrect stream properties");
         }
         long outSize = 0L;
         for (int i = 0; i < 8; ++i) {
-            int v = inStream.read();
+            final int v = inStream.read();
             if (v < 0) {
                 throw new Exception("Can't read stream size");
             }

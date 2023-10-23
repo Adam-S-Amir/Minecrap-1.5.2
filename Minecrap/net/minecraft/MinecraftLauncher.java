@@ -1,32 +1,34 @@
-/*
- * Decompiled with CFR 0.152.
- */
+// 
+// Decompiled by Procyon v0.5.36
+// 
+
 package net.minecraft;
 
-import magnus.console.OutputConsole;
+import java.io.Reader;
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
+import magnus.console.OutputConsole;
+import java.io.IOException;
+import java.util.List;
 import java.util.ArrayList;
-import net.minecraft.LauncherFrame;
 
-public class MinecraftLauncher {
+public class MinecraftLauncher
+{
     private static final long MIN_HEAP = 511L;
     private static final long RECOMMENDED_HEAP = 1024L;
-    private static boolean debugMode = false;
-
-    public static void main(String[] args) throws Exception {
-        long heapSizeMegs;
+    private static boolean debugMode;
+    
+    public static void main(final String[] args) throws Exception {
         if (args.length > 0 && args[0].contains("debug")) {
-            debugMode = true;
+            MinecraftLauncher.debugMode = true;
         }
-        if ((heapSizeMegs = Runtime.getRuntime().maxMemory() / 1024L / 1024L) > 511L) {
+        final long heapSizeMegs = Runtime.getRuntime().maxMemory() / 1024L / 1024L;
+        if (heapSizeMegs > 511L) {
             LauncherFrame.main(args);
-        } else {
-            Process process;
-            ProcessBuilder pb;
-            ArrayList<String> params = new ArrayList<String>();
-            String pathToJar = MinecraftLauncher.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath();
+        }
+        else {
+            final ArrayList params = new ArrayList();
+            final String pathToJar = MinecraftLauncher.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath();
             params.add("javaw");
             params.add("-Xms512m");
             params.add("-Xmx1024m");
@@ -37,36 +39,32 @@ public class MinecraftLauncher {
             params.add("-classpath");
             params.add(pathToJar);
             params.add("net.minecraft.LauncherFrame");
-            if (!debugMode) {
+            if (!MinecraftLauncher.debugMode) {
                 try {
-                    pb = new ProcessBuilder(params);
-                    process = pb.start();
+                    final ProcessBuilder pb = new ProcessBuilder(params);
+                    final Process process = pb.start();
                     if (process == null) {
                         throw new Exception("!");
                     }
                     System.exit(0);
                 }
-                catch (IOException ec) {
-                    // empty catch block
-                }
+                catch (IOException ex) {}
             }
             try {
                 params.set(0, "java");
-                pb = new ProcessBuilder(params);
-                process = pb.start();
+                final ProcessBuilder pb = new ProcessBuilder(params);
+                final Process process = pb.start();
                 if (process == null) {
                     throw new IOException("!");
                 }
-                if (debugMode) {
+                if (MinecraftLauncher.debugMode) {
                     final OutputConsole console = new OutputConsole();
                     final BufferedReader reader1 = new BufferedReader(new InputStreamReader(process.getErrorStream()));
                     final BufferedReader reader2 = new BufferedReader(new InputStreamReader(process.getInputStream()));
-                    Thread errorViewer = new Thread(){
-                        BufferedReader reader;
-                        {
-                            this.reader = reader1;
-                        }
-
+                    final Thread errorViewer = new Thread() {
+                        BufferedReader reader = reader1;
+                        
+                        @Override
                         public void run() {
                             boolean terminated = false;
                             boolean noerrors = true;
@@ -83,26 +81,27 @@ public class MinecraftLauncher {
                                         System.err.println(output);
                                         console.appendText("\nError: " + output);
                                     }
-                                    catch (IOException ex1) {
+                                    catch (IOException ex2) {
                                         output = null;
                                     }
                                 }
-                                if (exitvalue == Integer.MIN_VALUE) continue;
-                                terminated = true;
-                                if (exitvalue == 0) continue;
-                                noerrors = false;
+                                if (exitvalue != Integer.MIN_VALUE) {
+                                    terminated = true;
+                                    if (exitvalue == 0) {
+                                        continue;
+                                    }
+                                    noerrors = false;
+                                }
                             }
                             if (noerrors) {
                                 console.release();
                             }
                         }
                     };
-                    Thread outViewer = new Thread(){
-                        BufferedReader reader;
-                        {
-                            this.reader = reader2;
-                        }
-
+                    final Thread outViewer = new Thread() {
+                        BufferedReader reader = reader2;
+                        
+                        @Override
                         public void run() {
                             boolean terminated = false;
                             boolean noerrors = true;
@@ -119,14 +118,17 @@ public class MinecraftLauncher {
                                         System.out.println(output);
                                         console.appendText("\nOutput: " + output);
                                     }
-                                    catch (IOException ex1) {
+                                    catch (IOException ex2) {
                                         output = null;
                                     }
                                 }
-                                if (exitvalue == Integer.MIN_VALUE) continue;
-                                terminated = true;
-                                if (exitvalue == 0) continue;
-                                noerrors = false;
+                                if (exitvalue != Integer.MIN_VALUE) {
+                                    terminated = true;
+                                    if (exitvalue == 0) {
+                                        continue;
+                                    }
+                                    noerrors = false;
+                                }
                             }
                             if (noerrors) {
                                 console.release();
@@ -136,7 +138,7 @@ public class MinecraftLauncher {
                     errorViewer.start();
                     outViewer.start();
                 }
-                if (!debugMode) {
+                if (!MinecraftLauncher.debugMode) {
                     System.exit(0);
                 }
             }
@@ -145,5 +147,9 @@ public class MinecraftLauncher {
                 LauncherFrame.main(args);
             }
         }
+    }
+    
+    static {
+        MinecraftLauncher.debugMode = false;
     }
 }

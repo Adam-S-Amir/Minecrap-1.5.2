@@ -1,42 +1,50 @@
-/*
- * Decompiled with CFR 0.152.
- */
+// 
+// Decompiled by Procyon v0.5.36
+// 
+
 package net.minecraft;
 
-import java.applet.Applet;
-import java.applet.AppletStub;
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Font;
-import java.awt.FontMetrics;
-import java.awt.Graphics;
-import java.awt.Image;
-import java.awt.image.VolatileImage;
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
+import java.awt.FontMetrics;
+import java.awt.Font;
+import java.awt.Color;
+import java.awt.image.ImageObserver;
+import java.awt.Graphics;
+import java.awt.Component;
+import java.awt.LayoutManager;
+import java.awt.BorderLayout;
+import java.io.IOException;
 import javax.imageio.ImageIO;
-import net.minecraft.GameUpdater;
-import net.minecraft.LoginForm;
+import java.util.HashMap;
+import java.awt.image.VolatileImage;
+import java.awt.Image;
+import java.util.Map;
+import java.applet.AppletStub;
+import java.applet.Applet;
 
-public class Launcher
-extends Applet
-implements Runnable,
-AppletStub {
+public class Launcher extends Applet implements Runnable, AppletStub
+{
     private static final long serialVersionUID = 1L;
-    public Map<String, String> customParameters = new HashMap<String, String>();
+    public Map<String, String> customParameters;
     private GameUpdater gameUpdater;
-    private boolean gameUpdaterStarted = false;
+    private boolean gameUpdaterStarted;
     private Applet applet;
     private Image bgImage;
-    private boolean active = false;
-    private int context = 0;
+    private boolean active;
+    private int context;
     private VolatileImage img;
-    public boolean forceUpdate = false;
-
+    public boolean forceUpdate;
+    
+    public Launcher() {
+        this.customParameters = new HashMap<String, String>();
+        this.gameUpdaterStarted = false;
+        this.active = false;
+        this.context = 0;
+        this.forceUpdate = false;
+    }
+    
+    @Override
     public boolean isActive() {
         if (this.context == 0) {
             this.context = -1;
@@ -45,17 +53,15 @@ AppletStub {
                     this.context = 1;
                 }
             }
-            catch (Exception exception) {
-                // empty catch block
-            }
+            catch (Exception ex) {}
         }
         if (this.context == -1) {
             return this.active;
         }
         return super.isActive();
     }
-
-    public void init(String userName, String sessionId) {
+    
+    public void init(final String userName, final String sessionId) {
         try {
             this.bgImage = ImageIO.read(LoginForm.class.getResource("dirt.png")).getScaledInstance(32, 32, 16);
         }
@@ -67,11 +73,12 @@ AppletStub {
         this.gameUpdater = new GameUpdater();
         this.gameUpdater.forceUpdate = this.forceUpdate;
     }
-
+    
     public boolean canPlayOffline() {
         return this.gameUpdater.canPlayOffline();
     }
-
+    
+    @Override
     public void init() {
         if (this.applet != null) {
             this.applet.init();
@@ -79,7 +86,8 @@ AppletStub {
         }
         this.init(this.getParameter("userName"), this.getParameter("sessionId"));
     }
-
+    
+    @Override
     public void start() {
         if (this.applet != null) {
             this.applet.start();
@@ -88,30 +96,30 @@ AppletStub {
         if (this.gameUpdaterStarted) {
             return;
         }
-        Thread t = new Thread(){
-
+        Thread t = new Thread() {
+            @Override
             public void run() {
                 Launcher.this.gameUpdater.run();
                 try {
-                    if (!((Launcher)Launcher.this).gameUpdater.fatalError) {
+                    if (!Launcher.this.gameUpdater.fatalError) {
                         Launcher.this.replace(Launcher.this.gameUpdater.createApplet());
                     }
                 }
                 catch (ClassNotFoundException e) {
                     e.printStackTrace();
                 }
-                catch (InstantiationException e) {
-                    e.printStackTrace();
+                catch (InstantiationException e2) {
+                    e2.printStackTrace();
                 }
-                catch (IllegalAccessException e) {
-                    e.printStackTrace();
+                catch (IllegalAccessException e3) {
+                    e3.printStackTrace();
                 }
             }
         };
         t.setDaemon(true);
         t.start();
-        t = new Thread(){
-
+        t = new Thread() {
+            @Override
             public void run() {
                 while (Launcher.this.applet == null) {
                     Launcher.this.repaint();
@@ -128,87 +136,89 @@ AppletStub {
         t.start();
         this.gameUpdaterStarted = true;
     }
-
+    
+    @Override
     public void stop() {
         if (this.applet != null) {
             this.active = false;
             this.applet.stop();
-            return;
         }
     }
-
+    
+    @Override
     public void destroy() {
         if (this.applet != null) {
             this.applet.destroy();
-            return;
         }
     }
-
-    public void replace(Applet applet) {
-        this.applet = applet;
-        applet.setStub(this);
+    
+    public void replace(final Applet applet) {
+        (this.applet = applet).setStub(this);
         applet.setSize(this.getWidth(), this.getHeight());
         this.setLayout(new BorderLayout());
-        this.add((Component)applet, "Center");
+        this.add(applet, "Center");
         applet.init();
         this.active = true;
         applet.start();
         this.validate();
     }
-
-    public void update(Graphics g) {
+    
+    @Override
+    public void update(final Graphics g) {
         this.paint(g);
     }
-
-    public void paint(Graphics g2) {
+    
+    @Override
+    public void paint(final Graphics g2) {
         if (this.applet != null) {
             return;
         }
-        int w = this.getWidth() / 2;
-        int h = this.getHeight() / 2;
+        final int w = this.getWidth() / 2;
+        final int h = this.getHeight() / 2;
         if (this.img == null || this.img.getWidth() != w || this.img.getHeight() != h) {
             this.img = this.createVolatileImage(w, h);
         }
-        Graphics g = this.img.getGraphics();
+        final Graphics g3 = this.img.getGraphics();
         for (int x = 0; x <= w / 32; ++x) {
             for (int y = 0; y <= h / 32; ++y) {
-                g.drawImage(this.bgImage, x * 32, y * 32, null);
+                g3.drawImage(this.bgImage, x * 32, y * 32, null);
             }
         }
-        g.setColor(Color.LIGHT_GRAY);
+        g3.setColor(Color.LIGHT_GRAY);
         String msg = "Updating Minecraft";
         if (this.gameUpdater.fatalError) {
             msg = "Failed to launch";
         }
-        g.setFont(new Font(null, 1, 20));
-        FontMetrics fm = g.getFontMetrics();
-        g.drawString(msg, w / 2 - fm.stringWidth(msg) / 2, h / 2 - fm.getHeight() * 2);
-        g.setFont(new Font(null, 0, 12));
-        fm = g.getFontMetrics();
+        g3.setFont(new Font(null, 1, 20));
+        FontMetrics fm = g3.getFontMetrics();
+        g3.drawString(msg, w / 2 - fm.stringWidth(msg) / 2, h / 2 - fm.getHeight() * 2);
+        g3.setFont(new Font(null, 0, 12));
+        fm = g3.getFontMetrics();
         msg = this.gameUpdater.getDescriptionForState();
         if (this.gameUpdater.fatalError) {
             msg = this.gameUpdater.fatalErrorDescription;
         }
-        g.drawString(msg, w / 2 - fm.stringWidth(msg) / 2, h / 2 + fm.getHeight() * 1);
+        g3.drawString(msg, w / 2 - fm.stringWidth(msg) / 2, h / 2 + fm.getHeight() * 1);
         msg = this.gameUpdater.subtaskMessage;
-        g.drawString(msg, w / 2 - fm.stringWidth(msg) / 2, h / 2 + fm.getHeight() * 2);
+        g3.drawString(msg, w / 2 - fm.stringWidth(msg) / 2, h / 2 + fm.getHeight() * 2);
         if (!this.gameUpdater.fatalError) {
-            g.setColor(Color.black);
-            g.fillRect(64, h - 64, w - 128 + 1, 5);
-            g.setColor(new Color(32768));
-            g.fillRect(64, h - 64, this.gameUpdater.percentage * (w - 128) / 100, 4);
-            g.setColor(new Color(0x20A020));
-            g.fillRect(65, h - 64 + 1, this.gameUpdater.percentage * (w - 128) / 100 - 2, 1);
+            g3.setColor(Color.black);
+            g3.fillRect(64, h - 64, w - 128 + 1, 5);
+            g3.setColor(new Color(32768));
+            g3.fillRect(64, h - 64, this.gameUpdater.percentage * (w - 128) / 100, 4);
+            g3.setColor(new Color(2138144));
+            g3.fillRect(65, h - 64 + 1, this.gameUpdater.percentage * (w - 128) / 100 - 2, 1);
         }
-        g.dispose();
+        g3.dispose();
         g2.drawImage(this.img, 0, 0, w * 2, h * 2, null);
     }
-
+    
     public void run() {
     }
-
-    public String getParameter(String name) {
-        String custom = this.customParameters.get(name);
+    
+    @Override
+    public String getParameter(final String name) {
+        final String custom = this.customParameters.get(name);
         if (custom != null) {
             return custom;
         }
@@ -220,10 +230,11 @@ AppletStub {
             return null;
         }
     }
-
-    public void appletResize(int width, int height) {
+    
+    public void appletResize(final int width, final int height) {
     }
-
+    
+    @Override
     public URL getDocumentBase() {
         try {
             return new URL("http://www.youtube.com/user/magnus0");
