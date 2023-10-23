@@ -1,25 +1,57 @@
 import os
-import subprocess
+import shutil
 
-# Initialize an empty list to store relative file paths
-file_list = []
+# Define the source and destination directories
+base_dir = os.getcwd()
+output_dir = os.path.join(base_dir, "_Output")
 
-# Get the current directory
-current_dir = os.getcwd()
+# Create a list of folders to exclude
+exclude_folders = [".vscode"]
 
-# Iterate through all files in the current directory and its subdirectories
-for root, dirs, files in os.walk(current_dir):
+# Create lists to store information
+compiled_files = []
+copied_folders = []
+omitted_files = []
+omitted_folders = []
+
+# Create _Output directory
+os.makedirs(output_dir, exist_ok=True)
+print("Created _Output directory.")
+
+# Copy all files (excluding .py files and .vscode folder) to _Output
+for root, dirs, files in os.walk(base_dir):
+    for folder in list(dirs):  # Use list() to make a copy of dirs for modification
+        if folder in exclude_folders:
+            dirs.remove(folder)  # Exclude the folder from further processing
+            omitted_folders.append(os.path.join(root, folder))
     for file in files:
-        if file.endswith('.java'):
-            # Construct the relative file path
-            relative_file_path = os.path.relpath(os.path.join(root, file), current_dir)
+        source_path = os.path.join(root, file)
+        relative_path = os.path.relpath(source_path, base_dir)
+        destination_path = os.path.join(output_dir, relative_path)
 
-            # Add the relative file path to the list
-            file_list.append(relative_file_path)
+        if file.endswith(".py"):
+            omitted_files.append(source_path)
+        else:
+            os.makedirs(os.path.dirname(destination_path), exist_ok=True)
+            shutil.copy2(source_path, destination_path)
+            if source_path.endswith(".java"):
+                compiled_files.append(source_path)
+            else:
+                copied_folders.append(source_path)
 
-# Compile each Java file separately
-for file_path in file_list:
-    subprocess.run(["javac", file_path])
+# Output information
+print("\nFiles compiled into .class:")
+for file in compiled_files:
+    print(file)
 
-# Pause to view any error messages
-input("Compilation completed. Press Enter to exit...")
+print("\nFolders copied into _Output:")
+for folder in copied_folders:
+    print(folder)
+
+print("\nOmitted files:")
+for file in omitted_files:
+    print(file)
+
+print("\nOmitted folders:")
+for folder in omitted_folders:
+    print(folder)
