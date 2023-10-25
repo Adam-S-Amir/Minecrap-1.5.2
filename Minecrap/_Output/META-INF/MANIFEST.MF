@@ -4,4 +4,3 @@ Created-By: 16.3-b01-279 (Apple Inc.)
 Main-Class: net.minecraft.MinecraftLauncher
 Class-Path: 
 X-COMMENT: Main-Class will be added automatically by build
-
