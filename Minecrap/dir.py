@@ -6,7 +6,7 @@ base_dir = os.getcwd()
 output_dir = os.path.join(base_dir, "_Output")
 
 # Create a list of folders to exclude
-exclude_folders = [".vscode"]
+exclude_folders = [".vscode", "_Output"]
 
 # Create lists to store information
 compiled_files = []
